@@ -4,13 +4,86 @@ Django + MySQL placement management for a college placement office and its stude
 
 ## Architecture
 
-CampusDesk is a server-rendered Django application. Django handles routing, session authentication, validation, placement workflows, reporting, and HTML rendering; MySQL stores placement and student records. A separate REST API is not required for the current browser-based application. See [ARCHITECTURE.md](ARCHITECTURE.md) for the component diagram, data boundaries, and request flows.
+CampusDesk is a server-rendered Django application backed by MySQL. Django handles routing, session authentication, validation, placement workflows, reporting, and HTML rendering. The current browser-based application does not expose a separate REST API.
+
+### Component diagram
+
+```mermaid
+flowchart LR
+    Staff[Placement staff browser]
+    Student[Student browser]
+
+    subgraph Django[CampusDesk Django application]
+        Web[URLs and request middleware]
+        StaffViews[Staff views and Django admin]
+        StudentViews[Student views]
+        Guard[Authentication and role guards]
+        Logic[Forms, eligibility rules, and workflow logic]
+        Analytics[Analytics and SQL report queries]
+        Templates[HTML templates, CSS, and JavaScript]
+        PrivateDocs[Permission-checked document views]
+        AI[Optional on-demand AI insight]
+    end
+
+    subgraph Data[Data and external services]
+        AuthDB[(Django auth and session tables)]
+        PlacementDB[(MySQL placement database)]
+        PrivateStorage[(Private document storage)]
+        OpenAI[OpenAI Responses API]
+    end
+
+    Staff -->|HTTP requests and session| Web
+    Student -->|HTTP requests and session| Web
+    Web --> Guard
+    Guard --> StaffViews
+    Guard --> StudentViews
+    StaffViews --> Logic
+    StudentViews --> Logic
+    StaffViews --> Analytics
+    StudentViews --> Analytics
+    StaffViews --> PrivateDocs
+    StudentViews --> PrivateDocs
+    Logic --> PlacementDB
+    Analytics --> PlacementDB
+    Guard --> AuthDB
+    PrivateDocs --> PrivateStorage
+    StaffViews --> Templates
+    StudentViews --> Templates
+    Analytics --> Templates
+    Logic --> Templates
+    StaffViews --> AI
+    StudentViews --> AI
+    AI -->|Anonymized aggregate metrics, on request| OpenAI
+```
+
+### Request and access flow
+
+1. Browser requests pass through Django URL routing and security, session, CSRF, authentication, and message middleware.
+2. Staff use Django staff authentication. Staff-only pages require a staff account; Django admin is available at `/admin/`.
+3. Students use the student sign-in flow. `StudentPortalAccount` maps a Django user to one existing student record. The student access guard scopes protected pages to that linked student.
+4. Views validate form input and apply placement rules before changing records. Eligibility reasons use academic data, drive criteria, and configured skill requirements.
+5. Django renders pages with templates and static assets. Page interactions use server requests; there is no separate frontend API service.
+
+### Data ownership
+
+- **Existing placement schema:** departments, students, skills, companies, job roles, placement drives, company drives, applications, interview rounds, selections, and offers. `database/college_placement_management_db.sql` creates these tables. Their Django models are unmanaged, so Django migrations do not create or alter them.
+- **Application-managed additions:** student portal account mappings, semester performance, role skill requirements, interview scorecards, reminders, offer response deadlines, status history, and private student documents. Django migrations manage these tables.
+
+The SQL reports load SELECT statements from `database/queriesdb.sql`. Operational analytics also use Django ORM queries.
+
+### Sensitive data boundaries
+
+- Database credentials, the Django secret key, and the optional AI key come from local environment configuration. `.env` is excluded from Git.
+- Student documents are stored under `PRIVATE_MEDIA_ROOT`, outside public static URLs. Downloads use an authenticated view that checks staff access or student ownership.
+- AI insight generation runs only when requested. Its payload contains aggregate academic, placement, and interview metrics, excluding direct identifiers, documents, and free-text feedback. Requests use `store=false`; AI output is coaching guidance, not a hiring decision or prediction.
+
+### Project structure
 
 - `config/` — Django settings and project-level routes.
 - `placements/` — data models, staff and student workflows, eligibility rules, analytics, and admin configuration.
 - `templates/` and `static/` — server-rendered pages, styles, and password visibility controls.
 - `database/` — the existing MySQL schema and SQL report queries.
-- Django migrations — tables owned by this application, kept separate from the existing unmanaged placement tables.
+- Django migrations — application-managed feature tables, kept separate from the existing unmanaged placement tables.
 
 ## Current capabilities
 

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ student.student_name }} · Student profile{% endblock %}
+{% block breadcrumb %}Student profile{% endblock %}
+{% block content %}
+<section class="page-heading">
+    <div><div class="eyebrow">STUDENT RECORD</div><h1>{{ student.student_name }}</h1><p>{{ student.roll_no }} · {{ student.department.department_name }} · {{ student.placement_status }}</p></div>
+    <div class="heading-actions"><a class="button button-light" href="{% url 'reminder_add' %}">Create reminder</a><a class="button button-light" href="{% url 'students' %}">Back to students</a><a class="button button-light" href="{% url 'student_performance' student.student_id %}">Performance analysis</a><a class="button button-primary" href="{% url 'student_portal_access' student.student_id %}">{% if portal_account %}Reset portal access{% else %}Enable student portal{% endif %}</a></div>
+</section>
+<section class="stat-grid" aria-label="Student placement summary">
+    <article class="stat-card"><div class="stat-top"><span class="stat-icon blue">A</span><span class="stat-caption">CGPA</span></div><div class="stat-value">{{ student.cgpa|floatformat:2 }}</div><div class="stat-foot">Out of 10 · {{ student.backlogs }} backlogs</div></article>
+    <article class="stat-card"><div class="stat-top"><span class="stat-icon mint">↗</span><span class="stat-caption">APPLICATIONS</span></div><div class="stat-value">{{ application_count }}</div><div class="stat-foot">Across recruiting companies</div></article>
+    <article class="stat-card"><div class="stat-top"><span class="stat-icon orange">₹</span><span class="stat-caption">OFFERS</span></div><div class="stat-value">{{ offer_count }}</div><div class="stat-foot">An individual student may hold multiple offers</div></article>
+    <article class="stat-card"><div class="stat-top"><span class="stat-icon green">✓</span><span class="stat-caption">ELIGIBLE OPEN ROLES</span></div><div class="stat-value">{{ eligible_opportunity_count }}</div><div class="stat-foot">Current drive and role criteria</div></article>
+</section>
+{% if portal_account %}<section class="panel student-section"><div class="panel-heading"><div><div class="eyebrow">ACCOUNT LIFECYCLE</div><h2>Student portal access</h2><p class="muted">Disable access at graduation while preserving academic and placement history.</p></div><form method="post" action="{% url 'student_account_status' student.student_id %}">{% csrf_token %}<button class="button {% if portal_account.user.is_active %}button-light{% else %}button-primary{% endif %}" type="submit">{% if portal_account.user.is_active %}Disable student access{% else %}Re-enable student access{% endif %}</button></form></div></section>{% endif %}
+<div class="dashboard-grid">
+    <section class="panel"><div class="panel-heading"><div><div class="eyebrow">ACADEMIC PROFILE</div><h2>Student information</h2></div></div>
+        <div class="insight-list">
+            <div><span>Roll number</span><strong>{{ student.roll_no }}</strong></div>
+            <div><span>Registration number</span><strong>{{ student.registration_no|default:"—" }}</strong></div>
+            <div><span>Department</span><strong>{{ student.department.department_name }}</strong></div>
+            <div><span>Email</span><strong>{{ student.email }}</strong></div>
+            <div><span>Phone</span><strong>{{ student.phone|default:"—" }}</strong></div>
+            <div><span>Admission year</span><strong>{{ student.admission_year }}</strong></div>
+            <div><span>Graduation year</span><strong>{{ student.graduation_year }}</strong></div>
+            <div><span>Placement status</span><strong>{{ student.placement_status }}</strong></div>
+            <div><span>Portal account</span><strong>{% if portal_account %}{% if portal_account.user.is_active %}Enabled{% else %}Disabled{% endif %} · {{ portal_account.user.username }}{% else %}Not enabled{% endif %}</strong></div>
+        </div>
+    </section>
+    <section class="panel"><div class="panel-heading"><div><div class="eyebrow">RECORDED SKILLS</div><h2>Student skill profile</h2></div></div>
+        {% for skill in skills %}<span class="skill-chip">{{ skill.name }} <small>{{ skill.level }}{% if skill.experience %} · {{ skill.experience }} yrs{% endif %}</small></span>{% empty %}<p class="empty-state">No skills have been recorded for this student.</p>{% endfor %}
+    </section>
+</div>
+
+<section class="panel student-section"><div class="panel-heading"><div><div class="eyebrow">CURRENT ELIGIBILITY</div><h2>Open company roles</h2></div></div>
+    <div class="table-wrap"><table><thead><tr><th>COMPANY</th><th>ROLE</th><th>DRIVE</th><th>REQUIREMENTS</th><th>ELIGIBILITY</th></tr></thead><tbody>
+    {% for item in opportunities %}<tr><td>{{ item.company_drive.company.company_name }}</td><td>{{ item.role.role_title }}</td><td>{{ item.company_drive.drive.drive_name }}</td><td>CGPA {% if item.required_cgpa != None %}{{ item.required_cgpa }}{% else %}any{% endif %} · max {{ item.maximum_backlogs }} backlogs</td><td>{% if item.eligible %}<span class="pill pill-green">Eligible</span>{% else %}<span class="pill pill-neutral">Not eligible</span><small class="table-sub">{{ item.reasons|join:"; " }}</small>{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="5" class="empty-cell">No company roles are currently open for applications.</td></tr>{% endfor %}
+    </tbody></table></div>
+</section>
+
+<section class="panel student-section"><div class="panel-heading"><div><div class="eyebrow">RECRUITMENT HISTORY</div><h2>Companies applied to</h2></div><span class="row-count">{{ application_count }} applications</span></div>
+    <div class="table-wrap"><table><thead><tr><th>COMPANY</th><th>ROLE</th><th>DRIVE</th><th>APPLIED</th><th>ELIGIBILITY</th><th>APPLICATION</th><th>SELECTION</th><th>OFFER</th></tr></thead><tbody>
+    {% for application in applications %}<tr><td>{{ application.company_drive.company.company_name }}</td><td>{{ application.role.role_title }}</td><td>{{ application.company_drive.drive.drive_name }}</td><td>{{ application.application_date|date:"d M Y" }}</td><td>{{ application.eligibility_status }}</td><td>{{ application.application_status }}</td><td>{% if application.selection %}{{ application.selection.selection_status }}{% else %}—{% endif %}</td><td>{% if application.selection.offer %}{{ application.selection.offer.offer_status }}{% else %}—{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="8" class="empty-cell">No applications are recorded for this student.</td></tr>{% endfor %}
+    </tbody></table></div>
+</section>
+
+<section class="panel student-section"><div class="panel-heading"><div><div class="eyebrow">OFFER HISTORY</div><h2>Offers received</h2></div><span class="row-count">{{ offer_count }} offers</span></div>
+    <div class="table-wrap"><table><thead><tr><th>COMPANY</th><th>ROLE</th><th>OFFER DATE</th><th>JOINING DATE</th><th>ANNUAL CTC</th><th>STATUS</th><th>REFERENCE</th></tr></thead><tbody>
+    {% for offer in offers %}<tr><td>{{ offer.selection.application.company_drive.company.company_name }}</td><td>{{ offer.selection.application.role.role_title }}</td><td>{{ offer.offer_date|date:"d M Y" }}</td><td>{{ offer.joining_date|date:"d M Y"|default:"—" }}</td><td>{% if offer.annual_ctc %}₹{{ offer.annual_ctc|floatformat:0 }}{% else %}—{% endif %}</td><td>{{ offer.offer_status }}</td><td>{{ offer.offer_reference_no|default:"—" }}</td></tr>
+    {% empty %}<tr><td colspan="7" class="empty-cell">No offer records are linked to this student yet.</td></tr>{% endfor %}
+    </tbody></table></div>
+</section>
+
+<section class="panel student-section"><div class="panel-heading"><div><div class="eyebrow">ACADEMIC HISTORY</div><h2>Semester records</h2></div><a class="button button-light" href="{% url 'semester_record_add' student.student_id %}">Add term record</a></div><div class="table-wrap"><table><thead><tr><th>ACADEMIC YEAR</th><th>SEMESTER</th><th>SGPA</th><th>CUMULATIVE CGPA</th><th>BACKLOGS</th></tr></thead><tbody>{% for record in semester_records %}<tr><td>{{ record.academic_year }}</td><td>{{ record.semester }}</td><td>{{ record.sgpa|floatformat:2 }}</td><td>{{ record.cumulative_cgpa|floatformat:2 }}</td><td>{{ record.backlogs }}</td></tr>{% empty %}<tr><td colspan="5" class="empty-cell">No term-level academic records.</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="panel student-section"><div class="panel-heading"><div><div class="eyebrow">RESTRICTED FILES</div><h2>Resume and student documents</h2></div><a class="button button-light" href="{% url 'student_document_upload' student.student_id %}">Upload document</a></div>{% for document in private_documents %}<p><a class="text-link" href="{% url 'student_document_download' document.id %}">{{ document.original_name }}</a> · {{ document.uploaded_at|date:"d M Y" }}</p>{% empty %}<p class="muted">No private files are stored for this profile.</p>{% endfor %}</section>
+<section class="panel student-section"><div class="panel-heading"><div><div class="eyebrow">AUDIT</div><h2>Recent application and offer status changes</h2></div><a class="text-link" href="{% url 'status_history' %}">Full history →</a></div><div class="table-wrap"><table><thead><tr><th>WHEN</th><th>RECORD</th><th>CHANGE</th><th>STAFF</th></tr></thead><tbody>{% for event in status_history %}<tr><td>{{ event.changed_at|date:"d M Y H:i" }}</td><td>{{ event.record_type }} {{ event.record_id }}</td><td>{{ event.old_value|default:"Created" }} → {{ event.new_value }}</td><td>{{ event.actor.username|default:"System" }}</td></tr>{% empty %}<tr><td colspan="4" class="empty-cell">No changes recorded yet.</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

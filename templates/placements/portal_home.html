@@ -1,0 +1,89 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7f4">
+    <title>Choose your workspace · CampusDesk</title>
+    <link rel="stylesheet" href="{% static 'css/site.css' %}">
+    <link rel="stylesheet" href="{% static 'css/portal-home.css' %}">
+</head>
+<body class="portal-home">
+    <header class="portal-header">
+        <a class="brand" href="{% url 'portal_home' %}">
+            <span class="brand-mark">C</span>
+            <span><strong>CampusDesk</strong><small>College placement portal</small></span>
+        </a>
+        <div class="portal-header-actions">
+            <span class="portal-secure"><span aria-hidden="true">●</span> Secure role-based access</span>
+            {% if request.user.is_authenticated %}
+                <form method="post" action="{% url 'portal_logout' %}">
+                    {% csrf_token %}
+                    <button class="button button-secondary portal-signout" type="submit">Sign out</button>
+                </form>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="portal-main">
+        {% if messages %}
+            <div class="portal-messages">{% for message in messages %}<div class="message {{ message.tags }}">{{ message }}</div>{% endfor %}</div>
+        {% endif %}
+        <section class="portal-intro">
+            <p class="eyebrow">COLLEGE PLACEMENT MANAGEMENT</p>
+            <h1>Choose your workspace</h1>
+            <p class="portal-lead">Sign in to the right portal for your role. Placement staff manage recruitment; students explore openings and apply.</p>
+        </section>
+
+        <section class="portal-roles" aria-label="Choose a portal">
+            <article class="portal-role-card">
+                <div class="portal-role-icon staff-icon" aria-hidden="true">▦</div>
+                <p class="eyebrow">PLACEMENT OFFICE</p>
+                <h2>Staff workspace</h2>
+                <p class="role-description">Manage student records, company partnerships, job roles, drives, applications, interview outcomes, offers, and placement analytics.</p>
+                <ul class="role-features">
+                    <li>Maintain student profiles and eligibility criteria</li>
+                    <li>Manage companies, roles, and placement drives</li>
+                    <li>Review applications and record selections and offers</li>
+                </ul>
+                {% if is_staff_user %}
+                    <div class="signed-in-note">You are signed in to the placement office.</div>
+                    <a class="button button-primary role-action" href="{% url 'dashboard' %}">Continue to staff workspace <span>→</span></a>
+                    <a class="subtle-action" href="{% url 'admin:index' %}">Open Django admin record manager</a>
+                {% elif request.user.is_authenticated %}
+                    <div class="signed-in-note">Sign out of the student account before switching to staff.</div>
+                    <span class="button button-secondary role-action" aria-disabled="true">Sign out first using the top button</span>
+                {% else %}
+                    <a class="button button-primary role-action" href="{% url 'admin:login' %}?next={% url 'dashboard' %}">Placement office sign in <span>→</span></a>
+                    <a class="subtle-action" href="{% url 'admin:index' %}">Django admin record manager</a>
+                {% endif %}
+            </article>
+
+            <article class="portal-role-card">
+                <div class="portal-role-icon student-icon" aria-hidden="true">♧</div>
+                <p class="eyebrow">STUDENT WORKSPACE</p>
+                <h2>Student portal</h2>
+                <p class="role-description">View active opportunities matched to your profile, check eligibility, apply for roles, and follow your application and offer status.</p>
+                <ul class="role-features">
+                    <li>See open roles and their requirements</li>
+                    <li>Apply only when you meet the current criteria</li>
+                    <li>Track applications, interviews, selections, and offers</li>
+                </ul>
+                {% if student_account and not is_staff_user %}
+                    <div class="signed-in-note">Signed in as {{ student_account.student.student_name }} · {{ student_account.student.roll_no }}</div>
+                    <a class="button button-primary role-action" href="{% url 'student_dashboard' %}">Continue to student workspace <span>→</span></a>
+                {% elif request.user.is_authenticated %}
+                    <div class="signed-in-note">Sign out of the current account before signing in as a student.</div>
+                    <span class="button button-secondary role-action" aria-disabled="true">Sign out first using the top button</span>
+                {% else %}
+                    <a class="button button-primary role-action" href="{% url 'student_login' %}">Student sign in <span>→</span></a>
+                    <p class="access-note">Student accounts are enabled by the placement office. Your username is your roll number.</p>
+                {% endif %}
+            </article>
+        </section>
+        <p class="portal-help">Need an account or access reset? Contact your placement office administrator.</p>
+    </main>
+    <footer class="portal-footer">CampusDesk <span>·</span> College Placement Management</footer>
+</body>
+</html>

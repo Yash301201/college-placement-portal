@@ -1,0 +1,11 @@
+{% extends "placements/student_base.html" %}
+{% block title %}My applications{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">STUDENT WORKSPACE</div><h1>My applications</h1><p>Track eligibility, recruitment progress, interview rounds, and offer decisions.</p></div><a class="button button-light" href="{% url 'student_dashboard' %}">Browse opportunities</a></section>
+<section class="panel student-section"><div class="panel-heading"><div><div class="eyebrow">APPLICATION HISTORY</div><h2>{{ applications|length }} application{{ applications|length|pluralize }}</h2></div></div>
+    <div class="table-wrap"><table><thead><tr><th>COMPANY</th><th>ROLE</th><th>DRIVE</th><th>APPLIED</th><th>ELIGIBILITY</th><th>STATUS</th><th>INTERVIEWS</th><th>SELECTION</th><th>OFFER</th></tr></thead><tbody>
+    {% for application in applications %}<tr><td>{{ application.company_drive.company.company_name }}</td><td>{{ application.role.role_title }}</td><td>{{ application.company_drive.drive.drive_name }}</td><td>{{ application.application_date|date:"d M Y" }}</td><td><span class="pill {% if application.eligibility_status == 'Eligible' %}pill-green{% else %}pill-neutral{% endif %}">{{ application.eligibility_status }}</span></td><td>{{ application.application_status }}</td><td>{% for round in application.interview_rounds.all %}<div>{{ round.round_name }} · {{ round.round_status }}{% if round.scheduled_date %} · {{ round.scheduled_date|date:"d M Y, g:i A" }}{% endif %}</div>{% empty %}—{% endfor %}</td><td>{% if application.selection %}{{ application.selection.selection_status }}{% else %}—{% endif %}</td><td>{% if application.selection.offer %}{{ application.selection.offer.offer_status }}{% else %}—{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="9" class="empty-cell">No applications are recorded for your account.</td></tr>{% endfor %}
+    </tbody></table></div>
+</section>
+{% endblock %}

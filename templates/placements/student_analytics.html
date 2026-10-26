@@ -1,0 +1,78 @@
+{% extends "placements/student_base.html" %}
+{% block title %}My analytics{% endblock %}
+{% block content %}
+<section class="page-heading">
+    <div><div class="eyebrow">YOUR PLACEMENT DATA</div><h1>My performance &amp; analytics</h1><p>Recruitment progress and profile signals calculated from your recorded student data.</p></div>
+    <div class="heading-actions"><a class="button button-light" href="{% url 'student_dashboard' %}">Browse opportunities →</a><form method="post" action="{% url 'student_ai_insight' %}">{% csrf_token %}<button class="button button-primary" type="submit">Generate AI coaching insight</button></form></div>
+</section>
+
+<section class="stat-grid" aria-label="Your placement metrics">
+    <article class="stat-card"><div class="stat-top"><span class="stat-icon mint">✓</span><span class="stat-caption">ELIGIBLE OPEN ROLES</span></div><div class="stat-value">{{ eligible_opportunity_count }}<small> / {{ opportunity_count }}</small></div><div class="stat-foot">Matched to current published criteria</div></article>
+    <article class="stat-card"><div class="stat-top"><span class="stat-icon blue">↗</span><span class="stat-caption">APPLICATIONS</span></div><div class="stat-value">{{ application_count }}</div><div class="stat-foot">Across {{ company_rows|length }} recruiting companies</div></article>
+    <article class="stat-card"><div class="stat-top"><span class="stat-icon orange">◎</span><span class="stat-caption">SELECTION RATE</span></div><div class="stat-value">{% if selection_rate != None %}{{ selection_rate }}<small>%</small>{% else %}—{% endif %}</div><div class="stat-foot">{{ selected_count }} selected application{{ selected_count|pluralize }} · based on your applications</div></article>
+    <article class="stat-card"><div class="stat-top"><span class="stat-icon green">₹</span><span class="stat-caption">OFFERS</span></div><div class="stat-value">{{ offer_count }}</div><div class="stat-foot">{{ accepted_offer_count }} accepted or joined</div></article>
+</section>
+
+<div class="student-analytics-grid">
+    <section class="panel student-section">
+        <div class="panel-heading"><div><div class="eyebrow">RECRUITMENT OUTCOMES</div><h2>Your application outcomes</h2></div></div>
+        {% for item in outcome_funnel %}
+        <div class="analysis-bar-row">
+            <div class="analysis-bar-label"><span>{{ item.label }}</span><strong>{{ item.count }}{% if application_count %}<small> · {{ item.percent }}%</small>{% endif %}</strong></div>
+            <div class="analysis-bar-track"><div class="analysis-bar-fill {% if item.label == 'Rejected' %}bar-rejected{% elif item.label == 'Accepted or joined' %}bar-success{% endif %}" style="width: {{ item.percent }}%"></div></div>
+        </div>
+        {% empty %}<p class="empty-state">No application outcomes are recorded yet.</p>{% endfor %}
+        <p class="panel-footnote">Outcome bars are measured against your total applications. Percentages describe recorded results; they do not predict future selection.</p>
+    </section>
+
+    <section class="panel student-section">
+        <div class="panel-heading"><div><div class="eyebrow">PROFILE SIGNALS</div><h2>Academic &amp; interview snapshot</h2></div></div>
+        <div class="insight-list">
+            <div><span>Department</span><strong>{{ student.department.department_name }}</strong></div>
+            <div><span>Current CGPA</span><strong>{{ student.cgpa|floatformat:2 }} / 10</strong></div>
+            <div><span>Backlogs recorded</span><strong>{{ student.backlogs }}</strong></div>
+            <div><span>Open-role eligibility</span><strong>{{ eligible_opportunity_count }} of {{ opportunity_count }}</strong></div>
+            <div><span>Interview average</span><strong>{% if interview_summary.average != None %}{{ interview_summary.average|floatformat:1 }} / 100{% else %}No scored rounds{% endif %}</strong></div>
+            <div><span>Skills in profile</span><strong>{{ skills|length }}</strong></div>
+        </div>
+        <ul class="analysis-notes">{% for note in analysis_notes %}<li>{{ note }}</li>{% endfor %}</ul>
+    </section>
+</div>
+
+
+<section class="panel student-section"><div class="panel-heading"><div><div class="eyebrow">INTERVIEW FEEDBACK</div><h2>Released category scorecards</h2></div></div>
+<div class="table-wrap"><table><thead><tr><th>CATEGORY</th><th>SCORE</th><th>FEEDBACK</th></tr></thead><tbody>{% for item in released_category_scores %}<tr><td>{{ item.category }}</td><td>{{ item.score|floatformat:1 }} / 100</td><td>{{ item.feedback|default:"No written feedback recorded" }}</td></tr>{% empty %}<tr><td colspan="3" class="empty-cell">No released category feedback yet.</td></tr>{% endfor %}</tbody></table></div></section>
+<p class="panel-footnote">AI coaching is optional and runs only when you click the button. It sends anonymized numeric/aggregate metrics, not your name, roll number, email, resume, or free-text interview feedback. The API request uses store=false; standard abuse-monitoring retention may still apply.</p>
+
+{% include "placements/_performance_visuals.html" %}
+
+<section class="panel analytics-panel student-section">
+    <div class="panel-heading"><div><div class="eyebrow">COMPANY ACTIVITY</div><h2>Applications by company</h2></div><span class="row-count">{{ company_rows|length }} companies</span></div>
+    <div class="table-wrap"><table><thead><tr><th>COMPANY</th><th>APPLICATIONS</th><th>SELECTED</th><th>REJECTED</th><th>OFFERS</th></tr></thead><tbody>
+    {% for company in company_rows %}<tr><td><strong>{{ company.name }}</strong></td><td>{{ company.applications }}</td><td>{{ company.selected }}</td><td>{{ company.rejected }}</td><td>{{ company.offers }}</td></tr>
+    {% empty %}<tr><td colspan="5" class="empty-cell">Your company activity will appear after you apply.</td></tr>{% endfor %}
+    </tbody></table></div>
+</section>
+
+<div class="student-analytics-grid">
+    <section class="panel student-section">
+        <div class="panel-heading"><div><div class="eyebrow">INTERVIEW HISTORY</div><h2>Recorded interview rounds</h2></div></div>
+        <div class="table-wrap"><table><thead><tr><th>COMPANY &amp; ROLE</th><th>ROUND</th><th>DATE</th><th>SCORE</th><th>STATUS</th></tr></thead><tbody>
+        {% for interview in interviews %}<tr><td><strong>{{ interview.application.company_drive.company.company_name }}</strong><small class="table-sub">{{ interview.application.role.role_title }}</small></td><td>{{ interview.round_name }}</td><td>{% if interview.scheduled_date %}{{ interview.scheduled_date|date:"d M Y" }}{% else %}—{% endif %}</td><td>{% if interview.score != None %}{{ interview.score|floatformat:1 }} / 100{% else %}—{% endif %}</td><td>{{ interview.round_status }}</td></tr>
+        {% empty %}<tr><td colspan="5" class="empty-cell">No interview rounds have been recorded for your applications yet.</td></tr>{% endfor %}
+        </tbody></table></div>
+        <a class="text-link" href="{% url 'student_applications' %}">View application and interview details →</a>
+    </section>
+
+    <section class="panel student-section">
+        <div class="panel-heading"><div><div class="eyebrow">SKILLS &amp; OFFERS</div><h2>Your recorded profile</h2></div></div>
+        <div class="student-analysis-subsection"><h3>Skills</h3>
+            {% for skill in skills %}<span class="skill-chip">{{ skill.name }} <small>{{ skill.level|default:"Recorded" }}</small></span>{% empty %}<p class="muted">No skills are recorded. Ask the placement office to update your profile.</p>{% endfor %}
+        </div>
+        <div class="student-analysis-subsection"><h3>Offers</h3>
+            {% for offer in offers %}<div class="offer-summary-row"><span><strong>{{ offer.selection.application.company_drive.company.company_name }}</strong><small>{{ offer.selection.application.role.role_title }}</small></span><span>{% if offer.annual_ctc %}₹{{ offer.annual_ctc|floatformat:0 }}{% else %}Package not recorded{% endif %}<small>{{ offer.offer_status }}</small></span></div>
+            {% empty %}<p class="muted">No offers have been recorded for your applications yet.</p>{% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

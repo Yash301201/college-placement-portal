@@ -1,0 +1,28 @@
+
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block breadcrumb %}{{ title }}{% endblock %}
+{% block content %}
+<section class="page-heading">
+    <div><div class="eyebrow">{{ eyebrow }}</div><h1>{{ title }}</h1><p>{{ description }}</p></div>
+    <div class="heading-actions">
+        {% for action in actions %}<a class="button button-light" href="{{ action.url }}">{{ action.label }}</a>{% endfor %}
+        {% if add_url %}<a class="button button-primary" href="{% url add_url %}"><span>＋</span>{% if title == 'Students' %} Add student{% elif title == 'Companies' %} Add company{% elif title == 'Job roles' %} Add role{% elif title == 'Placement drives' %} Add drive{% elif title == 'Company drives' %} Add company drive{% elif title == 'Applications' %} Add application{% elif title == 'Interview rounds' %} Add interview{% elif title == 'Selections' %} Record selection{% elif title == 'Offers' %} Record offer{% else %} Add record{% endif %}</a>{% endif %}
+    </div>
+</section>
+<section class="panel data-panel">
+    <form class="filter-row" method="get">
+        <label class="search-box"><span>⌕</span><input type="search" name="q" value="{{ search }}" placeholder="Search {{ title|lower }}..."></label>
+        {% if departments %}<select name="department" aria-label="Filter by department"><option value="">All departments</option>{% for department in departments %}<option value="{{ department.department_id }}" {% if selected_department == department.department_id|stringformat:"s" %}selected{% endif %}>{{ department.department_name }}</option>{% endfor %}</select>{% endif %}
+        {% if graduation_years %}<select name="graduation_year" aria-label="Filter by graduation year"><option value="">All graduating years</option>{% for year in graduation_years %}<option value="{{ year }}" {% if selected_graduation_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>{% endfor %}</select>{% endif %}
+        {% if academic_years %}<select name="academic_year" aria-label="Filter by academic year"><option value="">All academic years</option>{% for year in academic_years %}<option value="{{ year }}" {% if selected_academic_year == year %}selected{% endif %}>{{ year }}</option>{% endfor %}</select>{% endif %}
+        <button class="button button-light" type="submit">Apply filters</button>
+        {% if search or selected_department or selected_graduation_year or selected_academic_year %}<a class="clear-link" href="{% if request.resolver_match.url_name == 'students' %}{% url 'students' %}{% elif request.resolver_match.url_name == 'companies' %}{% url 'companies' %}{% elif request.resolver_match.url_name == 'job_roles' %}{% url 'job_roles' %}{% elif request.resolver_match.url_name == 'drives' %}{% url 'drives' %}{% elif request.resolver_match.url_name == 'company_drives' %}{% url 'company_drives' %}{% else %}{% url 'applications' %}{% endif %}">Clear</a>{% endif %}
+    </form>
+    <div class="table-wrap"><table><thead><tr>{% for header in headers %}<th>{{ header|upper }}</th>{% endfor %}</tr></thead><tbody>
+    {% for row in rows %}<tr>{% for cell in row %}<td>{% if title == 'Interview rounds' and forloop.last %}<a class="text-link" href="{{ cell }}">Scorecard →</a>{% elif title == 'Students' and forloop.last %}<a class="text-link" href="{{ cell }}">View profile →</a>{% elif title == 'Students' and forloop.counter == 1 %}<strong>{{ cell }}</strong>{% elif title == 'Students' and forloop.counter == 8 %}<span class="pill {% if cell == 'Placed' %}pill-green{% else %}pill-neutral{% endif %}">{{ cell }}</span>{% elif title == 'Applications' and forloop.counter == 6 %}<span class="pill {% if cell == 'Selected' %}pill-green{% elif cell == 'Rejected' %}pill-red{% else %}pill-blue{% endif %}">{{ cell }}</span>{% else %}{{ cell|default:"—" }}{% endif %}</td>{% endfor %}</tr>
+    {% empty %}<tr><td colspan="{{ headers|length }}" class="empty-cell">No records match your filters. Use an Add button to create the first record.</td></tr>{% endfor %}
+    </tbody></table></div>
+    <div class="table-summary">{{ rows|length }} record{{ rows|length|pluralize }}</div>
+</section>
+{% endblock %}

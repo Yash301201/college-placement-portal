@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Student portal access{% endblock %}
+{% block breadcrumb %}Student portal access{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">ACCOUNT MANAGEMENT</div><h1>Student portal access</h1><p>{{ student.student_name }} · {{ student.roll_no }} · {{ student.department.department_name }}</p></div><a class="button button-light" href="{% url 'student_detail' student.student_id %}">Back to profile</a></section>
+<section class="panel form-panel">
+    {% if portal_account %}<div class="form-note">Access is enabled. The student's sign-in username is <strong>{{ portal_account.user.username }}</strong>. Set a new temporary password below if the student needs a reset.</div>
+    {% else %}<div class="form-note">This creates a student login linked only to this student record. The username will be the student's roll number. Give the temporary password to the student privately.</div>{% endif %}
+    <form method="post">{% csrf_token %}{% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="form-grid"><div class="form-field"><label for="student-login-username">Student login username</label><input id="student-login-username" type="text" name="username" value="{{ student.roll_no }}" autocomplete="username" autocapitalize="none" spellcheck="false" readonly aria-describedby="student-login-username-help"><small id="student-login-username-help">Students sign in with this roll number. Staff/admin credentials are separate.</small></div>{% for field in form %}<div class="form-field"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required">*</span>{% endif %}</label>{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</div>{% endfor %}</div>
+        <div class="form-actions"><a class="button button-light" href="{% url 'student_detail' student.student_id %}">Cancel</a><button class="button button-primary" type="submit">{% if portal_account %}Reset access{% else %}Create student login{% endif %}</button></div>
+    </form>
+</section>
+{% endblock %}

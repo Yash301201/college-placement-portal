@@ -1,0 +1,63 @@
+{% extends "placements/student_base.html" %}
+{% block title %}Student dashboard{% endblock %}
+{% block content %}
+<section class="page-heading">
+    <div><div class="eyebrow">STUDENT PLACEMENT WORKSPACE</div><h1>Welcome, {{ student.student_name }}</h1><p>Review current opportunities and follow your applications and offers.</p></div>
+    <div class="heading-actions"><a class="button button-light" href="{% url 'student_analytics' %}">My analytics</a><a class="button button-light" href="{% url 'student_applications' %}">View application history</a></div>
+</section>
+<section class="stat-grid" aria-label="Your placement summary">
+    <article class="stat-card"><div class="stat-top"><span class="stat-icon blue">↗</span><span class="stat-caption">APPLICATIONS</span></div><div class="stat-value">{{ application_count }}</div><div class="stat-foot">Submitted applications</div></article>
+    <article class="stat-card"><div class="stat-top"><span class="stat-icon mint">✓</span><span class="stat-caption">ELIGIBLE OPENINGS</span></div><div class="stat-value">{{ eligible_opportunity_count }}</div><div class="stat-foot">Based on current academic criteria</div></article>
+    <article class="stat-card"><div class="stat-top"><span class="stat-icon orange">₹</span><span class="stat-caption">OFFERS</span></div><div class="stat-value">{{ offer_count }}</div><div class="stat-foot">Offers across all applications</div></article>
+    <article class="stat-card"><div class="stat-top"><span class="stat-icon green">●</span><span class="stat-caption">PLACEMENT STATUS</span></div><div class="stat-value student-status-value">{{ student.placement_status }}</div><div class="stat-foot">Current profile status</div></article>
+</section>
+<section class="panel student-profile-strip">
+    <div><span class="eyebrow">YOUR PROFILE</span><strong>{{ student.roll_no }} · {{ student.department.department_name }}</strong></div>
+    <div><span>CGPA</span><strong>{{ student.cgpa|floatformat:2 }} / 10</strong></div>
+    <div><span>Backlogs</span><strong>{{ student.backlogs }}</strong></div>
+    <div><span>Graduation year</span><strong>{{ student.graduation_year }}</strong></div>
+</section>
+
+<section class="panel student-section"><div class="panel-heading"><div><div class="eyebrow">UPCOMING ACTIONS</div><h2>Reminders</h2></div><span class="row-count">{{ student_reminders|length }} upcoming</span></div>
+    <div class="reminder-list">{% for reminder in student_reminders %}<article class="reminder-item"><div><span class="pill pill-blue">{{ reminder.reminder_type }}</span><strong>{{ reminder.title }}</strong><p>{{ reminder.message }}</p><small>{{ reminder.due_at|date:"d M Y H:i" }}</small></div>{% if reminder.id and not reminder.read_at %}<form method="post" action="{% url 'reminder_mark_read' reminder.id %}">{% csrf_token %}<button class="button button-light" type="submit">Mark done</button></form>{% endif %}</article>{% empty %}<p class="empty-state">No upcoming reminders. Interview dates, open registration deadlines, offer response dates, and staff reminders will show here.</p>{% endfor %}</div>
+</section>
+<section class="panel student-section"><div class="panel-heading"><div><div class="eyebrow">PRIVATE PROFILE FILES</div><h2>Your documents</h2></div><div class="heading-actions"><a class="button button-light" href="{% url 'student_document_upload_self' %}">Upload resume</a><a class="button button-light" href="{% url 'student_analytics' %}">Academic progress →</a></div></div>
+    {% for document in private_documents %}<p><a class="text-link" href="{% url 'student_document_download' document.id %}">{{ document.original_name }}</a> · uploaded {{ document.uploaded_at|date:"d M Y" }}</p>{% empty %}<p class="muted">No private documents have been added to your account.</p>{% endfor %}
+</section>
+
+<section class="panel student-section" id="opportunities">
+    <div class="panel-heading"><div><div class="eyebrow">CURRENT RECRUITMENT</div><h2>Placement Readiness Studio</h2></div><span class="row-count">{{ opportunities|length }} role{{ opportunities|length|pluralize }}</span></div>
+    <div class="student-opportunity-grid">
+    {% for opportunity in opportunities %}
+        <article class="opportunity-card">
+            <div class="opportunity-top"><div><span class="opportunity-company">{{ opportunity.company_drive.company.company_name }}</span><h3>{{ opportunity.role.role_title }}</h3></div>
+                {% if opportunity.eligible %}<span class="pill pill-green">Eligible</span>{% else %}<span class="pill pill-neutral">Criteria not met</span>{% endif %}
+            </div>
+            <p class="muted">{{ opportunity.company_drive.drive.drive_name }} · {{ opportunity.role.work_location|default:"Location not specified" }}</p>
+            <div class="opportunity-facts"><span>Minimum CGPA <strong>{% if opportunity.required_cgpa != None %}{{ opportunity.required_cgpa }}{% else %}No minimum{% endif %}</strong></span><span>Maximum backlogs <strong>{{ opportunity.maximum_backlogs }}</strong></span><span>Package <strong>{% if opportunity.role.salary_package %}₹{{ opportunity.role.salary_package|floatformat:0 }}{% else %}Not listed{% endif %}</strong></span></div>
+            {% if opportunity.skill_requirements %}<p class="muted"><strong>Required skills:</strong> {% for requirement in opportunity.skill_requirements %}{{ requirement.skill_name }} ({{ requirement.minimum_proficiency }}){% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+            {% if opportunity.reasons %}<div class="readiness-reasons"><strong>Criteria not met</strong><ul class="eligibility-reasons">{% for reason in opportunity.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>{% if opportunity.next_steps %}<strong>Suggested next steps</strong><ul class="eligibility-reasons">{% for step in opportunity.next_steps %}<li>{{ step }}</li>{% endfor %}</ul>{% endif %}</div>{% else %}<p class="muted">Your recorded profile meets this role’s listed academic, department, and skill criteria.</p>{% endif %}
+            <div class="opportunity-action">
+                {% if opportunity.application %}<span class="pill pill-blue">Already applied · {{ opportunity.application.application_status }}</span>
+                {% elif opportunity.eligible %}<form method="post" action="{% url 'student_apply' opportunity.company_drive.company_drive_id opportunity.role.role_id %}">{% csrf_token %}<button class="button button-primary" type="submit">Apply for this role →</button></form>
+                {% else %}<span class="muted">You cannot apply because the listed criteria are not met.</span>{% endif %}
+            </div>
+        </article>
+    {% empty %}<div class="empty-state">The placement office has not published any open opportunities for this period.</div>{% endfor %}
+    </div>
+</section>
+
+<section class="panel student-section">
+    <div class="panel-heading"><div><div class="eyebrow">YOUR RECRUITMENT HISTORY</div><h2>Recent applications</h2></div><a class="text-link" href="{% url 'student_applications' %}">All applications →</a></div>
+    <div class="table-wrap"><table><thead><tr><th>COMPANY</th><th>ROLE</th><th>APPLIED</th><th>ELIGIBILITY</th><th>STATUS</th><th>OFFER</th></tr></thead><tbody>
+    {% for application in applications|slice:":8" %}<tr><td>{{ application.company_drive.company.company_name }}</td><td>{{ application.role.role_title }}</td><td>{{ application.application_date|date:"d M Y" }}</td><td>{{ application.eligibility_status }}</td><td><span class="pill pill-blue">{{ application.application_status }}</span></td><td>{% if application.selection.offer %}{{ application.selection.offer.offer_status }}{% else %}—{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="6" class="empty-cell">You have not submitted any applications yet.</td></tr>{% endfor %}
+    </tbody></table></div>
+</section>
+
+{% if offers %}<section class="panel student-section"><div class="panel-heading"><div><div class="eyebrow">OFFER TRACKER</div><h2>Your offers</h2></div><span class="row-count">{{ offer_count }} total</span></div>
+    <div class="table-wrap"><table><thead><tr><th>COMPANY</th><th>ROLE</th><th>OFFER DATE</th><th>ANNUAL CTC</th><th>STATUS</th></tr></thead><tbody>
+    {% for offer in offers %}<tr><td>{{ offer.selection.application.company_drive.company.company_name }}</td><td>{{ offer.selection.application.role.role_title }}</td><td>{{ offer.offer_date|date:"d M Y" }}</td><td>{% if offer.annual_ctc %}₹{{ offer.annual_ctc|floatformat:0 }}{% else %}—{% endif %}</td><td><span class="pill {% if offer.offer_status == 'Accepted' or offer.offer_status == 'Joined' %}pill-green{% elif offer.offer_status == 'Declined' or offer.offer_status == 'Withdrawn' %}pill-red{% else %}pill-blue{% endif %}">{{ offer.offer_status }}</span></td></tr>{% endfor %}
+    </tbody></table></div>
+</section>{% endif %}
+{% endblock %}

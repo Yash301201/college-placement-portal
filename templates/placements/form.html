@@ -1,0 +1,13 @@
+
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block breadcrumb %}{{ title }}{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">RECORD MANAGEMENT</div><h1>{{ title }}</h1><p>Complete the fields below. Required fields are marked in the form.</p></div></section>
+<section class="panel form-panel"><form method="post" enctype="multipart/form-data">{% csrf_token %}
+    {% if form_note %}<p class="form-note">{{ form_note }}</p>{% endif %}
+    {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-grid">{% for field in form %}<div class="form-field {% if field.name == 'company_name' or field.name == 'student_name' or field.name == 'job_description' or field.name == 'remarks' or field.name == 'feedback' %}wide-field{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required">*</span>{% endif %}</label>{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</div>{% endfor %}</div>
+    <div class="form-actions">{% if cancel_href %}<a class="button button-light" href="{{ cancel_href }}">Cancel</a>{% else %}<a class="button button-light" href="{% url cancel_url %}">Cancel</a>{% endif %}<button class="button button-primary" type="submit">Save record <span>→</span></button></div>
+</form></section>
+{% endblock %}

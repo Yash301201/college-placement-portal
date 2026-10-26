@@ -1,0 +1,72 @@
+from django.urls import path, reverse_lazy
+from django.contrib.auth import views as auth_views
+from .forms import StudentPasswordResetForm
+
+from . import views, enhancements
+
+urlpatterns = [
+    path("", views.portal_home, name="portal_home"),
+    path("office/", views.dashboard, name="dashboard"),
+    path("account/logout/", views.portal_logout, name="portal_logout"),
+    path("students/", views.students, name="students"),
+    path("students/add/", views.student_add, name="student_add"),
+    path("students/<int:student_id>/", views.student_detail, name="student_detail"),
+    path("students/<int:student_id>/performance/", views.student_performance, name="student_performance"),
+    path("students/<int:student_id>/semesters/add/", enhancements.semester_record_add, name="semester_record_add"),
+    path("students/<int:student_id>/documents/add/", enhancements.student_document_upload, name="student_document_upload"),
+    path("students/<int:student_id>/account-status/", enhancements.student_account_status, name="student_account_status"),
+    path("students/<int:student_id>/ai-insight/", enhancements.staff_ai_insight, name="staff_ai_insight"),
+    path("students/import-export/", enhancements.student_import_export, name="student_import_export"),
+    path("status-history/", enhancements.status_history, name="status_history"),
+    path("documents/<int:document_id>/download/", enhancements.student_document_download, name="student_document_download"),
+    path("students/<int:student_id>/portal-access/", views.student_portal_access, name="student_portal_access"),
+    path("companies/", views.companies, name="companies"),
+    path("companies/add/", views.company_add, name="company_add"),
+    path("roles/", views.job_roles, name="job_roles"),
+    path("roles/add/", views.job_role_add, name="job_role_add"),
+    path("drives/", views.drives, name="drives"),
+    path("drives/add/", views.drive_add, name="drive_add"),
+    path("company-drives/", views.company_drives, name="company_drives"),
+    path("company-drives/add/", views.company_drive_add, name="company_drive_add"),
+    path("applications/", views.applications, name="applications"),
+    path("applications/add/", views.application_add, name="application_add"),
+    path("interviews/", views.interviews, name="interviews"),
+    path("interviews/add/", views.interview_add, name="interview_add"),
+    path("interviews/<int:round_id>/scorecard/", enhancements.interview_scorecard, name="interview_scorecard"),
+    path("selections/", views.selections, name="selections"),
+    path("selections/add/", views.selection_add, name="selection_add"),
+    path("offers/", views.offers, name="offers"),
+    path("offers/add/", views.offer_add, name="offer_add"),
+    path("reminders/add/", enhancements.reminder_add, name="reminder_add"),
+    path("analytics/", views.analytics, name="analytics"),
+    path("reports/", views.reports, name="reports"),
+    path("student/login/", views.student_login, name="student_login"),
+    path("student/password-reset/", auth_views.PasswordResetView.as_view(
+        form_class=StudentPasswordResetForm,
+        template_name="registration/student_password_reset_form.html",
+        email_template_name="registration/student_password_reset_email.txt",
+        subject_template_name="registration/student_password_reset_subject.txt",
+        success_url=reverse_lazy("student_password_reset_done"),
+    ), name="student_password_reset"),
+    path("student/password-reset/done/", auth_views.PasswordResetDoneView.as_view(
+        template_name="registration/student_password_reset_done.html"), name="student_password_reset_done"),
+    path("student/reset/<uidb64>/<token>/", auth_views.PasswordResetConfirmView.as_view(
+        template_name="registration/student_password_reset_confirm.html",
+        success_url=reverse_lazy("student_password_reset_complete"),
+    ), name="student_password_reset_confirm"),
+    path("student/reset/complete/", auth_views.PasswordResetCompleteView.as_view(
+        template_name="registration/student_password_reset_complete.html"), name="student_password_reset_complete"),
+    path("student/logout/", views.student_logout, name="student_logout"),
+    path("student/", views.student_dashboard, name="student_dashboard"),
+    path("student/analytics/", views.student_analytics, name="student_analytics"),
+    path("student/ai-insight/", enhancements.student_ai_insight, name="student_ai_insight"),
+    path("student/documents/add/", enhancements.student_document_upload_self, name="student_document_upload_self"),
+    path("student/reminders/<int:reminder_id>/read/", enhancements.reminder_mark_read, name="reminder_mark_read"),
+    path("student/applications/", views.student_applications, name="student_applications"),
+    path(
+        "student/opportunities/<int:company_drive_id>/<int:role_id>/apply/",
+        views.student_apply,
+        name="student_apply",
+    ),
+    path("student/password/", views.student_password_change, name="student_password_change"),
+]

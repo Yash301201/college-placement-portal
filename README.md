@@ -4,7 +4,7 @@ Django + MySQL placement management for a college placement office and its stude
 
 ## Architecture
 
-CampusDesk is a server-rendered Django application. Django handles routing, session authentication, validation, placement workflows, reporting, and HTML rendering; MySQL stores placement and student records. A separate REST API is not required for the current browser-based application.
+CampusDesk is a server-rendered Django application. Django handles routing, session authentication, validation, placement workflows, reporting, and HTML rendering; MySQL stores placement and student records. A separate REST API is not required for the current browser-based application. See [ARCHITECTURE.md](ARCHITECTURE.md) for the component diagram, data boundaries, and request flows.
 
 - `config/` — Django settings and project-level routes.
 - `placements/` — data models, staff and student workflows, eligibility rules, analytics, and admin configuration.

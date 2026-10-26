@@ -1,6 +1,16 @@
-# College Placement Portal
+# CampusDesk — College Placement Portal
 
-Django + MySQL portal for a placement office and its students. The application uses the existing SQL schema in `database/college_placement_management_db.sql` and its report bank in `database/queriesdb.sql`. Existing placement tables remain mapped as unmanaged Django models; the new feature tables are created by Django migrations.
+Django + MySQL placement management for a college placement office and its students. The application uses the SQL schema in `database/college_placement_management_db.sql` and its report bank in `database/queriesdb.sql`. Existing placement tables remain mapped as unmanaged Django models; the new feature tables are created by Django migrations.
+
+## Architecture
+
+CampusDesk is a server-rendered Django application. Django handles routing, session authentication, validation, placement workflows, reporting, and HTML rendering; MySQL stores placement and student records. A separate REST API is not required for the current browser-based application.
+
+- `config/` — Django settings and project-level routes.
+- `placements/` — data models, staff and student workflows, eligibility rules, analytics, and admin configuration.
+- `templates/` and `static/` — server-rendered pages, styles, and password visibility controls.
+- `database/` — the existing MySQL schema and SQL report queries.
+- Django migrations — tables owned by this application, kept separate from the existing unmanaged placement tables.
 
 ## Current capabilities
 
@@ -27,15 +37,22 @@ Add departments and skills before adding students and role requirements. Keep th
 
 ## 2. Install and configure
 
-In PowerShell, open the project folder:
+In PowerShell, open a terminal in the project folder and run:
 
 ```powershell
-cd "C:\Users\DELL\OneDrive\Yash\OneDrive\Documents\Python Scripts\college_placement_portal"
+py -m venv .venv
 .\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Copy `.env.example` to `.env` if needed. Set the correct MySQL values and a unique Django secret key. Keep `.env` private and out of source control.
+Create your local configuration from the example, then edit `.env` with your MySQL values and a unique Django secret key:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Keep `.env` private and out of source control.
 
 The local password-reset email backend prints reset links in the terminal running the app. Configure SMTP environment variables before relying on email reset in a deployment.
 

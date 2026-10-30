@@ -1,4 +1,4 @@
-"""Django settings for the local College Placement Portal."""
+"""Django settings for the College Placement Portal."""
 
 import os
 from pathlib import Path
@@ -14,8 +14,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "local-development-key-change-before-deploying")
-DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in {"1", "true", "yes"}
-ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1" if DEBUG else "").split(",") if host.strip()]
+DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in {"1", "true", "yes"}
+RAILWAY_PUBLIC_DOMAIN = os.getenv("RAILWAY_PUBLIC_DOMAIN", "").strip()
+default_allowed_hosts = "localhost,127.0.0.1" if DEBUG else RAILWAY_PUBLIC_DOMAIN
+ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", default_allowed_hosts).split(",") if host.strip()]
 if not DEBUG and (SECRET_KEY == "local-development-key-change-before-deploying" or len(SECRET_KEY) < 50):
     raise ImproperlyConfigured("Set a unique DJANGO_SECRET_KEY of at least 50 characters before production.")
 if not DEBUG and not ALLOWED_HOSTS:
@@ -33,6 +35,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -64,11 +67,11 @@ ASGI_APPLICATION = "config.asgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": os.getenv("DB_NAME", "college_placement_db"),
-        "USER": os.getenv("DB_USER", "root"),
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
-        "PORT": os.getenv("DB_PORT", "3306"),
+        "NAME": os.getenv("DB_NAME") or os.getenv("MYSQLDATABASE", "college_placement_db"),
+        "USER": os.getenv("DB_USER") or os.getenv("MYSQLUSER", "root"),
+        "PASSWORD": os.getenv("DB_PASSWORD") or os.getenv("MYSQLPASSWORD", ""),
+        "HOST": os.getenv("DB_HOST") or os.getenv("MYSQLHOST", "127.0.0.1"),
+        "PORT": os.getenv("DB_PORT") or os.getenv("MYSQLPORT", "3306"),
         "OPTIONS": {"charset": "utf8mb4"},
     }
 }
@@ -92,7 +95,12 @@ MEDIA_ROOT = Path(os.getenv("PRIVATE_MEDIA_ROOT", BASE_DIR / "private_media"))
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
+if not DEBUG and not CSRF_TRUSTED_ORIGINS and RAILWAY_PUBLIC_DOMAIN:
+    CSRF_TRUSTED_ORIGINS = [f"https://{RAILWAY_PUBLIC_DOMAIN}"]
 SECURE_SSL_REDIRECT = (not DEBUG) and os.getenv("SECURE_SSL_REDIRECT", "True").lower() in {"1", "true", "yes"}
+# Enable only when the hosting platform's trusted reverse proxy overwrites this header.
+if not DEBUG and os.getenv("TRUST_PROXY_SSL_HEADER", "False").lower() in {"1", "true", "yes"}:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
@@ -115,6 +123,11 @@ TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = False
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"

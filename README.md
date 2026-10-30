@@ -139,11 +139,15 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Open:
+### Local development links
+
+These links work only on this computer while `runserver` is running. `127.0.0.1` is a loopback address; it is not a public website and will not work for a recruiter opening it from another computer.
 
 - Staff portal: http://127.0.0.1:8000/
 - Django admin: http://127.0.0.1:8000/admin/
 - Student sign-in: http://127.0.0.1:8000/student/login/
+
+To share the portal, deploy it and use the HTTPS domain assigned to the live deployment. See [DEPLOYMENT.md](DEPLOYMENT.md) before sharing a recruiter link.
 
 The migration adds new Django-owned tables for semester results, role skill requirements, interview scorecards, reminders, offer response deadlines, audit entries, and private student documents. It does not create, drop, or alter the existing unmanaged placement tables.
 
@@ -168,6 +172,8 @@ python manage.py backup_mysql
 
 The command requires the MySQL client tool `mysqldump` on PATH. It writes a timestamped `.sql.gz` file under `BACKUP_DIR` (default `backups/`). Store backups on a protected volume, set a retention schedule, and periodically test restore procedures. Do not store backups in a public web directory.
 
-For production, set `DJANGO_DEBUG=False`, a random `DJANGO_SECRET_KEY` of at least 50 characters, the exact `ALLOWED_HOSTS`, HTTPS, and production SMTP. Secure cookies, HTTPS redirect, HSTS, and Django security headers are enabled when debug is off. Configure the reverse proxy correctly before enabling HTTPS redirect. Resume files are kept in `PRIVATE_MEDIA_ROOT`, which is not mapped to a public URL; use a private, backed-up disk with least-privilege access.
+For production, set `DJANGO_DEBUG=False`, a random `DJANGO_SECRET_KEY` of at least 50 characters, the exact `ALLOWED_HOSTS`, HTTPS, and production SMTP. Secure cookies, HTTPS redirect, HSTS, and Django security headers are enabled when debug is off. If HTTPS terminates at a trusted hosting proxy, set `TRUST_PROXY_SSL_HEADER=True` only when that proxy overwrites `X-Forwarded-Proto`. Resume files are kept in `PRIVATE_MEDIA_ROOT`, which is not mapped to a public URL; use a private, backed-up disk with least-privilege access.
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the hosting steps, production environment variables, and the public URLs to share after deployment.
 
 Before importing real student information, set access policies for staff accounts, secure the host and database, schedule backups, confirm SMTP delivery, and review data retention and institutional privacy rules.
